@@ -1,0 +1,5 @@
+.idea/*
+vendor/*
+cert/*
+cert_*/*
+example/*
