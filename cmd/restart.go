@@ -111,7 +111,7 @@ var restartAgentCmd = &cobra.Command{
 
 
 func init() {
-	rootCmd.AddCommand(restartCmd)
+	RootCmd.AddCommand(restartCmd)
 	restartCmd.AddCommand(restartServiceCmd)
 	restartCmd.AddCommand(restartAgentCmd)
 

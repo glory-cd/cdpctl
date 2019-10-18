@@ -71,6 +71,6 @@ var backupCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(backupCmd)
+	RootCmd.AddCommand(backupCmd)
 	backupCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","backup all services under given group-name.")
 }

@@ -69,6 +69,6 @@ var rollbackCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(rollbackCmd)
+	RootCmd.AddCommand(rollbackCmd)
 	rollbackCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","rollback all services under given group-name.")
 }

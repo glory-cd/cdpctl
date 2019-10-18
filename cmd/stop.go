@@ -67,6 +67,6 @@ var stopCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(stopCmd)
+	RootCmd.AddCommand(stopCmd)
 	stopCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","stop all services under given group-name.")
 }

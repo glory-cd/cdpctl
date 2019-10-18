@@ -70,6 +70,6 @@ var checkCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(checkCmd)
+	RootCmd.AddCommand(checkCmd)
 	checkCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","check all services under given group-name.")
 }

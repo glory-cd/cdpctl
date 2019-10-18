@@ -68,7 +68,7 @@ var startupCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(startupCmd)
+	RootCmd.AddCommand(startupCmd)
 	startupCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","startup all services under given group-name.")
 
 }

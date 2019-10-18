@@ -103,7 +103,7 @@ var deployCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(deployCmd)
+	RootCmd.AddCommand(deployCmd)
 }
 
 // 部署任务回滚

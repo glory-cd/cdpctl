@@ -121,7 +121,7 @@ For example:
 }
 
 func init() {
-	rootCmd.AddCommand(setCmd)
+	RootCmd.AddCommand(setCmd)
 	setCmd.AddCommand(setAgentCmd)
 	setCmd.AddCommand(setReleaseCodeCmd)
 	setCmd.AddCommand(setTimedTaskCmd)

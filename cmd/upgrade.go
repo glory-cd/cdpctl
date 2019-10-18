@@ -77,7 +77,7 @@ var upgradeCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(upgradeCmd)
+	RootCmd.AddCommand(upgradeCmd)
 	upgradeCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","upgrade all services under given group-name.")
 	upgradeCmd.Flags().StringVarP(&FlagRelName, "release", "r", "","release-name involved in upgrade task.")
 

@@ -240,7 +240,7 @@ var getExecutionDetailCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(getCmd)
+	RootCmd.AddCommand(getCmd)
 	getCmd.PersistentFlags().StringSliceVarP(&QueryFlagNames, "name", "n", []string{}, "Obtain category records based on gaven names.")
 	getCmd.PersistentFlags().StringSliceVarP(&QueryFlagIDs, "id", "i", []string{}, "Obtain category records based on gaven ids.")
 

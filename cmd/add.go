@@ -224,7 +224,7 @@ var addTaskCmd = &cobra.Command{
 
 
 func init() {
-	rootCmd.AddCommand(addCmd)
+	RootCmd.AddCommand(addCmd)
 	addCmd.AddCommand(addOrgCmd)
 	addCmd.AddCommand(addEnvCmd)
 	addCmd.AddCommand(addProjectCmd)

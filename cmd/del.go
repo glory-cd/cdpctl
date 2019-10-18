@@ -191,7 +191,7 @@ var delCronCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(delCmd)
+	RootCmd.AddCommand(delCmd)
 
 	delCmd.AddCommand(delOrgCmd)
 	delCmd.AddCommand(delEnvCmd)

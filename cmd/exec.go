@@ -64,6 +64,6 @@ var execTaskCmd = &cobra.Command{
 
 
 func init() {
-	rootCmd.AddCommand(execCmd)
+	RootCmd.AddCommand(execCmd)
 	execCmd.AddCommand(execTaskCmd)
 }
