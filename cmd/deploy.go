@@ -64,7 +64,7 @@ var deployCmd = &cobra.Command{
 			return
 		}
 
-		moduleNameIDMap, err := dLine.CheckMoudleName(releaseId)
+		moduleNameIDMap, err := dLine.CheckModuleName(releaseId)
 		if err != nil {
 			cmd.PrintErrf("[Deploy]: check module failed. %v\n", err)
 			return
@@ -73,7 +73,7 @@ var deployCmd = &cobra.Command{
 		var deployDetails []client.DeployServiceDetail
 		var hasAddService []string
 		for _, s := range d.Services {
-			serviceId, err := MyConn.AddService(s.Name, s.Dir, s.OsUser, s.OsPass, s.StartCMD, s.AgentID, s.MoudleName, client.WithGroupId(gid))
+			serviceId, err := MyConn.AddService(s.Name, s.Dir, s.OsUser, s.OsPass, s.AgentID, s.ModuleName, client.WithGroupId(gid))
 			if err != nil {
 				cmd.PrintErrf("[Deploy]: add service[%s] failed. %v\n", s.Name, err)
 				cmd.Println("[Deploy]: Rollback immediately...")
@@ -82,7 +82,7 @@ var deployCmd = &cobra.Command{
 			}
 			cmd.Printf("[Deploy] add service[%s]->[%s] successful.\n", s.Name, serviceId)
 			hasAddService = append(hasAddService, serviceId)
-			deployDetails = append(deployDetails, client.DeployServiceDetail{ServiceID: serviceId, ReleaseCodeID: moduleNameIDMap[s.MoudleName]})
+			deployDetails = append(deployDetails, client.DeployServiceDetail{ServiceID: serviceId, ReleaseCodeID: moduleNameIDMap[s.ModuleName]})
 		}
 
 		taskId, err := MyConn.AddTask(d.TaskName, client.WithReleaseId(releaseId), client.WithTaskDeploy(deployDetails),client.WithTaskShow(true))

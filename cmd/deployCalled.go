@@ -20,8 +20,7 @@ type Deploy struct {
 		Dir        string `yaml:"dir"`
 		OsUser     string `yaml:"osuser"`
 		OsPass     string `yaml:"ospass"`
-		StartCMD   string `yaml:"startcmd"`
-		MoudleName string `yaml:"moudlename"`
+		ModuleName string `yaml:"moudlename"`
 		AgentID    string `yaml:"nodeid"`
 	}
 }
@@ -31,7 +30,7 @@ type DeployLine struct {
 	TaskName    string
 	GroupName   string
 	ReleaseName string
-	MoudleNames []string
+	ModuleNames []string
 	AgentIds    []string
 }
 
@@ -85,11 +84,7 @@ func (dl *DeployLine) CheckDeployFileIsLegal(file string) (*Deploy, error) {
 				return &d, errors.New("[service->ospass] cannot not be empty.")
 			}
 
-			if s.StartCMD == "" {
-				return &d, errors.New("[service->startcmd] cannot not be empty.")
-			}
-
-			if s.MoudleName == "" {
+			if s.ModuleName == "" {
 				return &d, errors.New("[service->moudlename] cannot not be empty.")
 			}
 
@@ -104,7 +99,7 @@ func (dl *DeployLine) CheckDeployFileIsLegal(file string) (*Deploy, error) {
 	dl.ReleaseName = d.ReleaseName
 
 	for _, s := range d.Services {
-		dl.MoudleNames = append(dl.MoudleNames, s.MoudleName)
+		dl.ModuleNames = append(dl.ModuleNames, s.ModuleName)
 		dl.AgentIds = append(dl.AgentIds, s.AgentID)
 	}
 	return &d, nil
@@ -136,14 +131,14 @@ func (dl *DeployLine) CheckReleaseName() (int32, error) {
 /*
 	校验服务的模块名是否在本次发布中，如果存在返回name和ID对应的Map.
 */
-func (dl *DeployLine) CheckMoudleName(releaseId int32) (map[string]int32, error) {
+func (dl *DeployLine) CheckModuleName(releaseId int32) (map[string]int32, error) {
 	mapMoudleNameId := map[string]int32{}
 	mapReleaseCode, err := MyConn.GetReleaseCodeMap(releaseId)
 	if err != nil {
 		return mapMoudleNameId, err
 	}
 
-	for _, mn := range dl.MoudleNames {
+	for _, mn := range dl.ModuleNames {
 		if _, ok := mapReleaseCode[mn]; !ok {
 			return mapReleaseCode, errors.New("[" + mn + "]" + "not-exist.")
 		}
@@ -167,7 +162,7 @@ func (dl *DeployLine) CheckAgent() error {
 
 	for _, ai := range dl.AgentIds {
 		if _, ok := mapaoid[ai]; !ok {
-			return errors.New("agent [" + ai + "]" + " not-exist or offline.")
+			return errors.New("node [" + ai + "]" + " not-exist or offline.")
 		}
 	}
 	return nil
