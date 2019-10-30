@@ -53,9 +53,9 @@ var setAgentCmd = &cobra.Command{
 }
 
 var setReleaseCodeCmd = &cobra.Command{
-	Use:   "releasecode",
-	Short: "set releasecode",
-	Long:  `set releasecode`,
+	Use:   "release",
+	Short: "set release",
+	Long:  `set release`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
 			return errors.New("set release code only for two agrs. they are release name and release code.")
@@ -68,18 +68,18 @@ var setReleaseCodeCmd = &cobra.Command{
 
 		rid, err := CheckReleaseNameIsLegal(releaseName)
 		if err != nil {
-			cmd.PrintErrf("[SetReleaseCode] set release code failed. %v", rid)
+			cmd.PrintErrf("[SetRelease] set release code failed. %v", rid)
 			return
 		}
 
 		rc, err := CheckReleaseCodes(releaseCodeString)
 		if err != nil {
-			cmd.PrintErrf("[SetReleaseCode] set release code failed. %v", rid)
+			cmd.PrintErrf("[SetRelease] set release code failed. %v", rid)
 		}
 
 		err = MyConn.SetReleaseCode(rid, rc)
 		if err != nil {
-			cmd.PrintErrf("[SetReleaseCode] set release code failed.", err)
+			cmd.PrintErrf("[SetRelease] set release code failed.", err)
 			return
 		}
 		cmd.Println("set release code successful.")
