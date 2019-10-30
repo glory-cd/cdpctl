@@ -27,7 +27,7 @@ var addCmd = &cobra.Command{
 	Short: "add command",
 	Long:  `add one of categories`,
 	Run: func(cmd *cobra.Command, args []string) {
-		_ = cmd.Help()
+		//_ = cmd.Help()
 		return
 	},
 }
@@ -140,12 +140,11 @@ you can specify code now or you can specify it with the set command.`,
 var addServiceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "add service",
-	Long:  `add service with name,directory,os-user,os-password,start-cmd,module-name,agent-id,
-you can design the code pattern,the stop-cmd,the pid file path,and group name  which it belongs.`,
-	Example:`  add service ServiceName ServicePath ServiceOsUser ServiceOsPass ServiceStartCmd ServiceModuleName serviceAgentId`,
+	Long:  `add service with name,directory,os-user,os-password,module-name,agent-id`,
+	Example:`  add service ServiceName ServicePath ServiceOsUser ServiceOsPass ServiceModuleName serviceAgentId`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 7 {
-			return errors.New("add service command requires 7 args.")
+		if len(args) != 6 {
+			return errors.New("add service command requires 6 args.")
 		}
 		return nil
 	},
@@ -154,11 +153,10 @@ you can design the code pattern,the stop-cmd,the pid file path,and group name  w
 		serviceDir := args[1]
 		serviceOsUser := args[2]
 		serviceOsPass := args[3]
-		serviceStartCmd := args[4]
-		serviceModuleName := args[5]
-		serviceAgentId := args[6]
+		serviceModuleName := args[4]
+		serviceAgentId := args[5]
 
-		id,err := MyConn.AddService(serviceName, serviceDir, serviceOsUser, serviceOsPass, serviceStartCmd, serviceAgentId, serviceModuleName,
+		id,err := MyConn.AddService(serviceName, serviceDir, serviceOsUser, serviceOsPass, serviceAgentId, serviceModuleName,
 			client.WithGroupName(FlagGroName),
 			client.WithStopCmd(addServiceStopCmd),
 			client.WithPidFile(addServicePidFile),
