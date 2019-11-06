@@ -18,6 +18,7 @@ package cmd
 import (
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // getCmd represents the get command
@@ -25,11 +26,15 @@ var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "get command",
 	Long:  `get command can obtain information you want.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if cmd.Commands() == nil {
-			_ = cmd.Help()
-			return
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
 		}
+
 	},
 }
 

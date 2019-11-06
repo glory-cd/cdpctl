@@ -14,6 +14,14 @@ import (
 	"time"
 )
 
+func ConnServer(certFile, url string) (conn *client.CDPClient, err error) {
+	if certFile != "" && url != ""{
+		cdpAttr := client.CDPCClientAttr{CertFile: certFile, Address: url}
+		conn, err = client.NewClient(cdpAttr)
+	}
+	return
+}
+
 /*
 	添加发布时，检查发布的代码，将其格式化.
     要求: "name:path;name:path"
@@ -23,8 +31,8 @@ func CheckReleaseCodes(codes string) (client.ReleaseCodeSlice, error) {
 	if codes == "" {
 		return rcObj, errors.New("release codes string is empty.")
 	}
-	for _, rcode := range strings.Split(codes, ";") {
-		rCodeSlice := strings.Split(rcode, ":")
+	for _, rCode := range strings.Split(codes, ";") {
+		rCodeSlice := strings.Split(rCode, ":")
 		if len(rCodeSlice) != 2 {
 			return rcObj, errors.New("release code format-error")
 		}
@@ -69,7 +77,7 @@ func CheckReleaseNameIsLegal(rName string) (int32, error) {
 	添加任务时，检查操作部署详情字符串是否合法，若合法，返回指定格式
 	要求: "serviceid:moudlename;serviceid:moudlename"
 */
-func CheckTaskDeploysIsLegal(releaseid int32, deploy string) ([]client.DeployServiceDetail, error) {
+func CheckTaskDeploysIsLegal(releaseId int32, deploy string) ([]client.DeployServiceDetail, error) {
 	if deploy == "" {
 		return nil, nil
 	}
@@ -81,7 +89,7 @@ func CheckTaskDeploysIsLegal(releaseid int32, deploy string) ([]client.DeploySer
 		}
 		serviceId := dslice[0]
 		moudleName := dslice[1]
-		nameIdMap, err := MyConn.GetReleaseCodeMap(releaseid)
+		nameIdMap, err := MyConn.GetReleaseCodeMap(releaseId)
 		if err != nil {
 			return dd, errors.New("[" + moudleName + "]" + " get-releasecode-err")
 		}
@@ -97,7 +105,7 @@ func CheckTaskDeploysIsLegal(releaseid int32, deploy string) ([]client.DeploySer
 	添加任务时，检查操作升级详情字符串是否合法，若合法，返回指定格式
 	要求: "serviceid;serviceid:lib,config/aaa.xml"
 */
-func CheckTaskUpgradeIsLegal(releaseid int32, upgrade string) ([]client.UpgradeServiceDetail, error) {
+func CheckTaskUpgradeIsLegal(releaseId int32, upgrade string) ([]client.UpgradeServiceDetail, error) {
 	if upgrade == "" {
 		return nil, nil
 	}
@@ -119,7 +127,7 @@ func CheckTaskUpgradeIsLegal(releaseid int32, upgrade string) ([]client.UpgradeS
 	添加任务时，检查操作升级详情字符串是否合法，若合法，返回指定格式
 	要求: "serviceid:op;serviceid:op"
 */
-func CheckTaskStaticIsLegal(releaseid int32, static string) ([]client.StaticServiceDetail, error) {
+func CheckTaskStaticIsLegal(releaseId int32, static string) ([]client.StaticServiceDetail, error) {
 	if static == "" {
 		return nil, nil
 	}
@@ -177,8 +185,7 @@ func ParseStringIsDigit(ids []string) ([]int32, error) {
 	return idNumber, nil
 }
 
-
-func  GetRandomString() string {
+func GetRandomString() string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ"
 	bytes := []byte(str)
 	result := []byte{}

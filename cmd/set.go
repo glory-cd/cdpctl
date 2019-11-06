@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
+	"os"
 	"github.com/spf13/cobra"
 	"strconv"
 )
@@ -27,8 +27,15 @@ var setCmd = &cobra.Command{
 	Use:   "set",
 	Short: "set command",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("set called")
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 }
 

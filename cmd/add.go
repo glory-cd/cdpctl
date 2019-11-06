@@ -19,6 +19,7 @@ import (
 	"errors"
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // addCmd represents the add command
@@ -26,9 +27,15 @@ var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "add command",
 	Long:  `add one of categories`,
-	Run: func(cmd *cobra.Command, args []string) {
-		//_ = cmd.Help()
-		return
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 }
 

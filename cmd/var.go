@@ -6,7 +6,20 @@ package cmd
 
 import "github.com/glory-cd/server/client"
 
+//version
+var versionString = "0.0.12"
+
+const (
+	ServerCertFileKey string = "server.certFile"
+	ServerHostUrlKey  string = "server.hostUrl"
+
+	ServerCertFileDefault string = "server.crt"
+	ServerHostUrlKeyDefault string = "localhost:50051"
+)
+
 var MyConn *client.CDPClient
+var certFile string
+var hostUrl string
 
 var (
 	// add flag
@@ -57,8 +70,3 @@ var OpMap = map[string]client.OpMode{"": client.OperateDefault,
 	"backup":   client.OperateBackUp,
 	"rollback": client.OperateRollBack}
 
-
-const (
-	UsageFormat = "Usage:\n  %s\n\nFlags:\n%s"
-	AddUsageFormat = "cdpctl add command [args] [flags]\n\n"
-)

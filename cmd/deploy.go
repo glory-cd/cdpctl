@@ -19,6 +19,7 @@ import (
 	"errors"
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // deployCmd represents the deploy command
@@ -31,6 +32,16 @@ var deployCmd = &cobra.Command{
 			return errors.New("deploy command must specify a deploy file as args, which format is yaml.")
 		}
 		return nil
+	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		deployFile := args[0]

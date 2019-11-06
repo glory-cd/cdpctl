@@ -19,6 +19,7 @@ import (
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
 	"errors"
+	"os"
 )
 
 // checkCmd represents the check command
@@ -33,6 +34,16 @@ var checkCmd = &cobra.Command{
 			return errors.New("check must specify services or group")
 		}
 		return nil
+	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var checkInfos []client.StaticServiceDetail

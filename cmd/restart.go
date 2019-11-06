@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
+	"os"
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
 )
@@ -27,8 +27,15 @@ var restartCmd = &cobra.Command{
 	Use:   "restart",
 	Short: "restart command",
 	Long: `restart command`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("restart called")
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 }
 

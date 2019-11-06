@@ -18,7 +18,7 @@ package cmd
 import (
 	"errors"
 	"github.com/glory-cd/server/client"
-
+	"os"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +32,16 @@ var rollbackCmd = &cobra.Command{
 			return errors.New("rollback must specify services or group")
 		}
 		return nil
+	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var rollbackInfos []client.StaticServiceDetail

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"github.com/spf13/cobra"
 	"strconv"
+	"os"
 )
 
 
@@ -28,7 +29,15 @@ var execCmd = &cobra.Command{
 	Use:   "exec",
 	Short: "execute one task",
 	Long: `For example: exec taskid`,
-	Run: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		var err error
+		MyConn, err = ConnServer(certFile, hostUrl)
+
+		if MyConn == nil  || err != nil{
+			cmd.PrintErrf("conn server failed. %s\n", err)
+			os.Exit(1)
+		}
+
 	},
 }
 
