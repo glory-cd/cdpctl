@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"errors"
+	"github.com/spf13/viper"
 	"os"
 	"github.com/spf13/cobra"
 	"strconv"
@@ -30,12 +31,32 @@ var setCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
-
 		if MyConn == nil  || err != nil{
 			cmd.PrintErrf("conn server failed. %s\n", err)
 			os.Exit(1)
 		}
 
+	},
+}
+
+var setConfigCmd = &cobra.Command{
+	Use:   "conf",
+	Short: "configure for tool ",
+	Long: `configure the server connection address and certificate path`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if serverHost != ""{
+			viper.Set(ServerHostUrlKey, serverHost)
+		}
+
+		if serverCert != ""{
+			viper.Set(ServerCertFileKey, serverCert)
+		}
+		err := viper.WriteConfig()
+		if err != nil{
+			cmd.PrintErrf("[SetConfig] set config failed. %s\n",err)
+			return
+		}
+		cmd.Println("[SetConfig] set config success.")
 	},
 }
 
@@ -73,7 +94,7 @@ var setReleaseCodeCmd = &cobra.Command{
 		releaseName := args[0]
 		releaseCodeString := args[1]
 
-		rid, err := CheckReleaseNameIsLegal(releaseName)
+		rid, _, err := CheckReleaseNameIsLegal(releaseName)
 		if err != nil {
 			cmd.PrintErrf("[SetRelease] set release code failed. %v", rid)
 			return
@@ -98,7 +119,7 @@ var setTimedTaskCmd = &cobra.Command{
 	Short: "set task to timed",
 	Long: `just set existing task to timed,and specify execution time.
 For example:
-  set task task_id 
+  set task task_id task_exec_time
 `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
@@ -129,7 +150,11 @@ For example:
 
 func init() {
 	RootCmd.AddCommand(setCmd)
+	setCmd.AddCommand(setConfigCmd)
 	setCmd.AddCommand(setAgentCmd)
 	setCmd.AddCommand(setReleaseCodeCmd)
 	setCmd.AddCommand(setTimedTaskCmd)
+
+	setConfigCmd.Flags().StringVarP(&serverHost,"server","","","")
+	setConfigCmd.Flags().StringVarP(&serverCert,"cert","","","")
 }

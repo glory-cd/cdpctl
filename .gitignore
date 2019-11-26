@@ -3,3 +3,4 @@ vendor/*
 cert/*
 cert_*/*
 example/*
+*.exe

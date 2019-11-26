@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
 	"os"
@@ -27,12 +26,6 @@ var startupCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start service",
 	Long:  `start service'`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 && FlagGroName == ""{
-			return errors.New("startup must specify services or group")
-		}
-		return nil
-	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
@@ -44,21 +37,26 @@ var startupCmd = &cobra.Command{
 
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var startInfos []client.StaticServiceDetail
-		if len(args) > 0 {
-			for _, sId := range args {
-				startInfos = append(startInfos, client.StaticServiceDetail{ServiceID: sId, Op: client.OperateStart})
-			}
-		} else {
-			services, err := MyConn.GetServices(client.WithGroupNames([]string{FlagGroName}))
-			if err != nil {
-				cmd.PrintErrf("[StartUp] get group's service failed. %v\n", err)
-				return
-			}
-			for _, service := range services {
-				startInfos = append(startInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateStart})
-			}
+		if len(FlagServiceIds) == 0 && FlagGroName == "" {
+			cmd.PrintErrf("[StartUp] backup must specify services or group.\n")
+			return
+		}
 
+		var GroupCondition []string
+		if FlagGroName != ""{
+			GroupCondition = append(GroupCondition,FlagGroName)
+		}
+
+		services, err := MyConn.GetServices(client.WithGroupNames(GroupCondition),client.WithServiceIds(FlagServiceIds))
+		if err != nil {
+			cmd.PrintErrf("[StartUp] get service failed. %v\n", err)
+			return
+		}
+
+		var startInfos []client.StaticServiceDetail
+
+		for _, service := range services{
+			startInfos = append(startInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateStart})
 		}
 
 		taskName := "startup_" + GetRandomString()
@@ -81,5 +79,5 @@ var startupCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(startupCmd)
 	startupCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","startup all services under given group-name.")
-
+	startupCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "backup services under given service ids.")
 }

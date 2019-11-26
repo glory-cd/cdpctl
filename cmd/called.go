@@ -59,23 +59,30 @@ func CheckTaskOpModeIsLegal(opMode string) (client.OpMode, error) {
 }
 
 /*
-	校验发布名称是否存在，如果存在返回组织ID
+	校验发布名称是否存在，如果存在返回组织ID，和module的slice
 */
-func CheckReleaseNameIsLegal(rName string) (int32, error) {
+func CheckReleaseNameIsLegal(rName string) (int32, map[string]int32, error) {
+	ms := map[string]int32{}
 	if rName == "" {
-		return 0, nil
+		return 0, ms, nil
 	}
 
 	releases, err := MyConn.GetReleases(client.WithNames([]string{rName}))
 	if err != nil {
-		return 0, err
+		return 0, ms, err
 	}
-	return releases.GetID(), nil
+	relseaseID := releases.GetID()
+	releaseCodes, err := MyConn.GetReleaseCodeMap(relseaseID)
+	if err != nil {
+		return 0, ms, err
+	}
+	ms = releaseCodes
+	return relseaseID, ms, nil
 }
 
 /*
 	添加任务时，检查操作部署详情字符串是否合法，若合法，返回指定格式
-	要求: "serviceid:moudlename;serviceid:moudlename"
+	要求: "serviceid;serviceid"
 */
 func CheckTaskDeploysIsLegal(releaseId int32, deploy string) ([]client.DeployServiceDetail, error) {
 	if deploy == "" {
@@ -83,20 +90,7 @@ func CheckTaskDeploysIsLegal(releaseId int32, deploy string) ([]client.DeploySer
 	}
 	var dd []client.DeployServiceDetail
 	for _, dmeta := range strings.Split(deploy, ";") {
-		dslice := strings.Split(dmeta, ":")
-		if len(dslice) != 2 {
-			return dd, errors.New("[" + dmeta + "]" + " format-error: ")
-		}
-		serviceId := dslice[0]
-		moudleName := dslice[1]
-		nameIdMap, err := MyConn.GetReleaseCodeMap(releaseId)
-		if err != nil {
-			return dd, errors.New("[" + moudleName + "]" + " get-releasecode-err")
-		}
-		if _, ok := nameIdMap[moudleName]; !ok {
-			return dd, errors.New("[" + moudleName + "]" + " not-exist")
-		}
-		dd = append(dd, client.DeployServiceDetail{ServiceID: serviceId, ReleaseCodeID: nameIdMap[moudleName]})
+		dd = append(dd, client.DeployServiceDetail{ServiceID: dmeta})
 	}
 	return dd, nil
 }

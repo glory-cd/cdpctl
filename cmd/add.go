@@ -31,7 +31,7 @@ var addCmd = &cobra.Command{
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
 
-		if MyConn == nil  || err != nil{
+		if MyConn == nil || err != nil {
 			cmd.PrintErrf("conn server failed. %s\n", err)
 			os.Exit(1)
 		}
@@ -40,10 +40,10 @@ var addCmd = &cobra.Command{
 }
 
 var addOrgCmd = &cobra.Command{
-	Use:   "org",
-	Short: "add organization",
-	Long:  `add Organization`,
-    Example: "  add org OrganizationName",
+	Use:     "org",
+	Short:   "add organization",
+	Long:    `add Organization`,
+	Example: "  add org OrganizationName",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("add org command requires one args. its name you need provide.")
@@ -57,10 +57,10 @@ var addOrgCmd = &cobra.Command{
 }
 
 var addEnvCmd = &cobra.Command{
-	Use:   "env",
-	Short: "add environment",
-	Long:  `add environment with name`,
-	Example:"  add env EnvironmentName",
+	Use:     "env",
+	Short:   "add environment",
+	Long:    `add environment with name`,
+	Example: "  add env EnvironmentName",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
 			return errors.New("add env command requires one arg. its name you need provide.")
@@ -74,9 +74,9 @@ var addEnvCmd = &cobra.Command{
 }
 
 var addProjectCmd = &cobra.Command{
-	Use:   "project",
-	Short: "add project",
-	Long:  `add project with name`,
+	Use:     "project",
+	Short:   "add project",
+	Long:    `add project with name`,
 	Example: "  add project ProjectName",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
@@ -94,7 +94,7 @@ var addGroupCmd = &cobra.Command{
 	Use:   "group",
 	Short: "add group",
 	Long:  `add group with name, you can design the organization,the environment,the project to which it belongs`,
-    Example:`  add group group_name
+	Example: `  add group group_name
   add group GroupName -o OrgName
   add group GroupName -o OrgName -e EnvName
   add group GroupName -o OrgName -e EnvName -p ProName`,
@@ -113,9 +113,9 @@ var addGroupCmd = &cobra.Command{
 var addReleaseCmd = &cobra.Command{
 	Use:   "release",
 	Short: "add release",
-	Long:  `add release with name, version,organization-name,project-name,
+	Long: `add release with name, version,organization-name,project-name,
 you can specify code now or you can specify it with the set command.`,
-	Example:`  add release ReleaseName ReleaseVersion OrganizationName ProjectName
+	Example: `  add release ReleaseName ReleaseVersion OrganizationName ProjectName
   add release ReleaseName ReleaseVersion OrganizationName ProjectName -c name:path;name:path`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 4 {
@@ -145,10 +145,10 @@ you can specify code now or you can specify it with the set command.`,
 }
 
 var addServiceCmd = &cobra.Command{
-	Use:   "service",
-	Short: "add service",
-	Long:  `add service with name,directory,os-user,os-password,module-name,agent-id`,
-	Example:`  add service ServiceName ServicePath ServiceOsUser ServiceOsPass ServiceModuleName serviceAgentId`,
+	Use:     "service",
+	Short:   "add service",
+	Long:    `add service with name,directory,os-user,os-password,module-name,agent-id`,
+	Example: `  add service ServiceName ServicePath ServiceOsUser ServiceOsPass ServiceModuleName serviceAgentId`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 6 {
 			return errors.New("add service command requires 6 args.")
@@ -163,7 +163,7 @@ var addServiceCmd = &cobra.Command{
 		serviceModuleName := args[4]
 		serviceAgentId := args[5]
 
-		id,err := MyConn.AddService(serviceName, serviceDir, serviceOsUser, serviceOsPass, serviceAgentId, serviceModuleName,
+		id, err := MyConn.AddService(serviceName, serviceDir, serviceOsUser, serviceOsPass, serviceAgentId, serviceModuleName,
 			client.WithGroupName(FlagGroName),
 			client.WithStopCmd(addServiceStopCmd),
 			client.WithPidFile(addServicePidFile),
@@ -177,8 +177,8 @@ var addTaskCmd = &cobra.Command{
 	Use:   "task",
 	Short: "add task",
 	Long:  `add task with name and operate information`,
-	Example:`  add task TaskName -o start -g GroupName
-  add task TaskName -d ServiceID:ModuleName;ServiceID:ModuleName -r ReleaseName
+	Example: `  add task TaskName -o start -g GroupName
+  add task TaskName -d ServiceID;ServiceID -r ReleaseName
   add task TaskName -u ServiceID;ServiceID:CustomUpgradeDir1,CustomUpgradeDir1 -r ReleaseName
   add task TaskName -s ServiceID:OpMode;ServiceID:OpMode`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -195,7 +195,7 @@ var addTaskCmd = &cobra.Command{
 		}
 
 		// 获取发布ID
-		rid, err := CheckReleaseNameIsLegal(FlagRelName)
+		rid, _, err := CheckReleaseNameIsLegal(FlagRelName)
 		if err != nil {
 			cmd.PrintErrf("[Add]: add task failed. %v", err)
 			return
@@ -220,13 +220,11 @@ var addTaskCmd = &cobra.Command{
 			cmd.PrintErrf("[Add]: add task failed. %v", err)
 			return
 		}
-		id, err := MyConn.AddTask(args[0], client.WithTaskShow(true),client.WithTaskOp(op), client.WithReleaseId(rid), client.WithGroupName(FlagGroName),client.WithTaskDeploy(deployInfos), client.WithTaskUpgrade(upgradeInfos), client.WithTaskStatic(staticInfos))
+		id, err := MyConn.AddTask(args[0], client.WithTaskShow(true), client.WithTaskOp(op), client.WithReleaseId(rid), client.WithGroupName(FlagGroName), client.WithTaskDeploy(deployInfos), client.WithTaskUpgrade(upgradeInfos), client.WithTaskStatic(staticInfos))
 		PrintAddResult(cmd, id, err, "task")
 
 	},
 }
-
-
 
 func init() {
 	RootCmd.AddCommand(addCmd)
@@ -252,8 +250,7 @@ func init() {
 	addTaskCmd.Flags().StringVarP(&FlagGroName, "group", "g", "cdpgro", "group name. ")
 	addTaskCmd.Flags().StringVarP(&FlagRelName, "release", "r", "", "release name.")
 	addTaskCmd.Flags().StringVarP(&addTaskOpMode, "op", "o", "", "operate mode.")
-	addTaskCmd.Flags().StringVarP(&addTaskDeploy, "deploy", "d", "", `deploy info. [format]: serviceid:moudlename;serviceid:moudlename`)
+	addTaskCmd.Flags().StringVarP(&addTaskDeploy, "deploy", "d", "", `deploy info. [format]: serviceid;serviceid`)
 	addTaskCmd.Flags().StringVarP(&addTaskUpgrade, "upgrade", "u", "", `upgrade info. [format]: serviceid;serviceid:lib,config/aaa.xml`)
 	addTaskCmd.Flags().StringVarP(&addTaskStatic, "static", "s", "", `static info. [format]:serviceid:op;serviceid:op`)
-
 }

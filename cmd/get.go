@@ -38,6 +38,18 @@ var getCmd = &cobra.Command{
 	},
 }
 
+var getConfigCmd = &cobra.Command{
+	Use:   "conf",
+	Short: "get config info",
+	Long:  `get config info`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Printf("server host: %s\n",hostUrl)
+		cmd.Printf("cert   file: %s\n",certFile)
+	},
+}
+
+
+
 var getOrgCmd = &cobra.Command{
 	Use:   "org",
 	Short: "get organization",
@@ -126,15 +138,19 @@ var getReleaseCodeCmd = &cobra.Command{
 	Short: "get releasecode",
 	Long:  `query releasecode`,
 	Run: func(cmd *cobra.Command, args []string) {
-		releaseIDs, err := ParseStringIsDigit(QueryFlagRelNames)
-		if err != nil {
-			cmd.PrintErrf("[Get]: get releasecode failed. %v", err)
+		releases,err := MyConn.GetReleases(client.WithNames(QueryFlagRelNames))
+		if err != nil{
+			cmd.PrintErrf("[Get]: get release code failed. %v", err)
 			return
+		}
+		releaseIDs := []int32{}
+		for _,r := range releases{
+			releaseIDs = append(releaseIDs,r.ID)
 		}
 
 		queryReleaseCode, err := MyConn.GetReleaseCodes(releaseIDs)
 		if err != nil {
-			cmd.PrintErrf("[Get]: get releasecode failed. %v", err)
+			cmd.PrintErrf("[Get]: get release code failed. %v", err)
 			return
 		}
 
@@ -147,13 +163,16 @@ var getServiceCmd = &cobra.Command{
 	Short: "get service",
 	Long:  `get service`,
 	Run: func(cmd *cobra.Command, args []string) {
-		queryServices, err := MyConn.GetServices(client.WithServiceIds(QueryFlagIDs), client.WithNames(QueryFlagNames), client.WithGroupNames(QueryFlagGroNames), client.WithAgentIds(queryAgentIds), client.WithModuleNames(queryMoudleNames))
+		queryServices, err := MyConn.GetServices(client.WithServiceIds(QueryFlagIDs), client.WithNames(QueryFlagNames), client.WithGroupNames(QueryFlagGroNames), client.WithAgentIds(queryAgentIds), client.WithModuleNames(queryModuleNames))
 		if err != nil {
 			cmd.PrintErrf("[Get]: get service failed. %v", err)
 			return
 		}
-
-		PrintGetResult(queryServices)
+		var showServices []showService
+		for _,s := range queryServices{
+			showServices = append(showServices,showService{ID:s.ID,Name:s.Name,Dir:s.Dir,HostIp:s.HostIp})
+		}
+		PrintGetResult(showServices)
 	},
 }
 
@@ -249,7 +268,7 @@ func init() {
 	getCmd.PersistentFlags().StringSliceVarP(&QueryFlagNames, "name", "n", []string{}, "Obtain category records based on gaven names.")
 	getCmd.PersistentFlags().StringSliceVarP(&QueryFlagIDs, "id", "i", []string{}, "Obtain category records based on gaven ids.")
 
-
+	getCmd.AddCommand(getConfigCmd)
 	getCmd.AddCommand(getOrgCmd)
 	getCmd.AddCommand(getEnvCmd)
 	getCmd.AddCommand(getProjectCmd)
@@ -274,7 +293,7 @@ func init() {
 
 	getServiceCmd.Flags().StringSliceVarP(&QueryFlagGroNames, "groups", "g", []string{}, "group names")
 	getServiceCmd.Flags().StringSliceVarP(&queryAgentIds, "agents", "a", []string{}, "agent ids")
-	getServiceCmd.Flags().StringSliceVarP(&queryMoudleNames, "modules", "m", []string{}, "module names")
+	getServiceCmd.Flags().StringSliceVarP(&queryModuleNames, "modules", "m", []string{}, "module names")
 
 	getTaskCmd.Flags().StringSliceVarP(&QueryFlagGroNames, "groups", "g", []string{}, "group name")
 	getTaskCmd.Flags().StringSliceVarP(&QueryFlagRelNames, "releases", "r", []string{}, "release name")

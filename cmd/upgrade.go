@@ -28,7 +28,10 @@ var upgradeCmd = &cobra.Command{
 	Short: "upgrade service",
 	Long:  `upgrade service'`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 && FlagGroName == ""{
+		if len(args) == 0 {
+			return errors.New("upgrade must specify release name")
+		}
+		if len(FlagServiceIds) == 0 && FlagGroName == "" {
 			return errors.New("upgrade must specify services or group")
 		}
 		return nil
@@ -37,7 +40,7 @@ var upgradeCmd = &cobra.Command{
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
 
-		if MyConn == nil  || err != nil{
+		if MyConn == nil || err != nil {
 			cmd.PrintErrf("conn server failed. %s\n", err)
 			os.Exit(1)
 		}
@@ -45,25 +48,8 @@ var upgradeCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var upgradeInfos []client.UpgradeServiceDetail
-		if len(args) > 0 {
-			for _, sId := range args {
-				upgradeInfos = append(upgradeInfos, client.UpgradeServiceDetail{ServiceID: sId})
-			}
-		} else {
-			services, err := MyConn.GetServices(client.WithGroupNames([]string{FlagGroName}))
-			if err != nil {
-				cmd.PrintErrf("[StartUp] get group's service failed. %v\n", err)
-				return
-			}
-			for _, service := range services {
-				upgradeInfos = append(upgradeInfos, client.UpgradeServiceDetail{ServiceID: service.ID})
-			}
-
-		}
-
-		taskName := "upgrade_" + GetRandomString()
 		// 获取发布ID
-		rid, err := CheckReleaseNameIsLegal(FlagRelName)
+		rid, modules, err := CheckReleaseNameIsLegal(args[0])
 		if rid == 0 {
 			cmd.PrintErrf("[Upgrade]: release name is empty.")
 			return
@@ -72,7 +58,33 @@ var upgradeCmd = &cobra.Command{
 			cmd.PrintErrf("[Upgrade]: release name is illegal. %v", err)
 			return
 		}
-		taskID, err := MyConn.AddTask(taskName, client.WithTaskUpgrade(upgradeInfos), client.WithReleaseId(rid),client.WithTaskShow(true))
+
+		var GroupCondition []string
+		if FlagGroName != ""{
+			GroupCondition = append(GroupCondition,FlagGroName)
+		}
+		// -s &-g
+		services, err := MyConn.GetServices(client.WithGroupNames(GroupCondition),client.WithServiceIds(FlagServiceIds))
+		if err != nil {
+			cmd.PrintErrf("[Upgrade] get group's service failed. %v\n", err)
+			return
+		}
+
+		// 校验
+		for _, s := range services {
+			if _, ok := modules[s.ModuleName]; !ok {
+				cmd.PrintErrf("[Deploy]: [%s] not in this release")
+				return
+			}
+		}
+
+		for _, service := range services {
+			upgradeInfos = append(upgradeInfos, client.UpgradeServiceDetail{ServiceID: service.ID})
+		}
+
+		taskName := "upgrade_" + GetRandomString()
+
+		taskID, err := MyConn.AddTask(taskName, client.WithTaskUpgrade(upgradeInfos), client.WithReleaseId(rid), client.WithTaskShow(true))
 		if err != nil {
 			cmd.PrintErrf("[Upgrade] add upgrade task failed. %v\n", err)
 		}
@@ -83,13 +95,11 @@ var upgradeCmd = &cobra.Command{
 		if len(result) > 0 {
 			PrintGetResult(result)
 		}
-
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(upgradeCmd)
-	upgradeCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","upgrade all services under given group-name.")
-	upgradeCmd.Flags().StringVarP(&FlagRelName, "release", "r", "","release-name involved in upgrade task.")
-
+	upgradeCmd.Flags().StringVarP(&FlagGroName, "group", "g", "", "upgrade all services under given group-name.")
+	upgradeCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "upgrade services under given service ids.")
 }

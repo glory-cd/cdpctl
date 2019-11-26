@@ -7,7 +7,7 @@ package cmd
 import "github.com/glory-cd/server/client"
 
 //version
-var versionString = "0.0.12"
+var versionString = "0.0.13"
 
 const (
 	ServerCertFileKey string = "server.certFile"
@@ -28,6 +28,7 @@ var (
 	AddFlagProName    string
 	FlagGroName    	  string
 	FlagRelName       string
+	FlagServiceIds    []string
 
 	addServiceCodePattern string
 	addServiceStopCmd     string
@@ -51,11 +52,18 @@ var (
 	QueryFlagRelNames []string
 	QueryFlagTasNames []string
 	queryAgentIds     []string
-	queryMoudleNames  []string
+	queryModuleNames  []string
 	queryOnLine       bool
 	queryFlagCronIDs  []int
 	queryTaskName     string
 	queryExecutionId  int
+
+	//set config
+	serverHost string
+	serverCert string
+
+	// deploy
+	deployFile string
 )
 
 
@@ -69,4 +77,11 @@ var OpMap = map[string]client.OpMode{"": client.OperateDefault,
 	"check":    client.OperateCheck,
 	"backup":   client.OperateBackUp,
 	"rollback": client.OperateRollBack}
+
+type showService struct {
+	ID     string
+	Name   string
+	Dir    string
+	HostIp string
+}
 

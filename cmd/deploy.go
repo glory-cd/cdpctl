@@ -26,10 +26,10 @@ import (
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "deploy services",
-	Long:  `First, define a yaml file that configures the necessary information for deployment, and then use -f to perform deployment.`,
+	Long:  `First, args need one ,it's release name,then can specify one or more service(-s),one group(-g) or define a yaml file that configures the necessary information for deployment(-f).`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return errors.New("deploy command must specify a deploy file as args, which format is yaml.")
+		if len(args) == 0 {
+			return errors.New("deploy must specify release name")
 		}
 		return nil
 	},
@@ -37,69 +37,108 @@ var deployCmd = &cobra.Command{
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
 
-		if MyConn == nil  || err != nil{
+		if MyConn == nil || err != nil {
 			cmd.PrintErrf("conn server failed. %s\n", err)
 			os.Exit(1)
 		}
 
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		deployFile := args[0]
-		dLine := DeployLine{DFile: deployFile}
-		d, err := dLine.CheckDeployFileIsLegal(deployFile)
-		if err != nil {
-			cmd.PrintErrf("[Deploy]: check deploy file failed. %v", err)
+		// 基本验证
+		if len(FlagServiceIds) == 0 && FlagGroName == "" && deployFile == "" {
+			cmd.PrintErrf("[Deploy]: must specify services or group or deploy file")
 			return
 		}
 
-		err = dLine.CheckAgent()
-		if err != nil {
-			cmd.PrintErrf("[Deploy]: check agent failed. %v", err)
+
+		if (len(FlagServiceIds) > 0 || FlagGroName != "") && deployFile != "" {
+			cmd.PrintErrf("[Deploy]: -s(-g) and -f can't coexist")
 			return
 		}
 
-		gid, err := dLine.CheckGroupName()
-		if err != nil {
-			cmd.PrintErrf("[Deploy]: check group failed. %v\n", err)
+
+		// 获取发布ID
+		rid, modules, err := CheckReleaseNameIsLegal(args[0])
+		if rid == 0 {
+			cmd.PrintErrf("[Deploy]: release name is empty.")
 			return
 		}
 
-		if gid == 0 {
-			cmd.PrintErrf("[Deploy]: check group[%s] failed. non-existent.\n", dLine.GroupName)
-			return
-		}
-
-		releaseId, err := dLine.CheckReleaseName()
-		if err != nil {
-			cmd.PrintErrf("[Deploy]: check release failed. %v\n", err)
-			return
-		}
-
-		moduleNameIDMap, err := dLine.CheckModuleName(releaseId)
-		if err != nil {
-			cmd.PrintErrf("[Deploy]: check module failed. %v\n", err)
-			return
-		}
-
-		var deployDetails []client.DeployServiceDetail
+		var deployInfos []client.DeployServiceDetail
 		var hasAddService []string
-		for _, s := range d.Services {
-			serviceId, err := MyConn.AddService(s.Name, s.Dir, s.OsUser, s.OsPass, s.AgentID, s.ModuleName, client.WithGroupId(gid))
+		if deployFile == "" {
+			var GroupCondition []string
+			if FlagGroName != ""{
+				GroupCondition = append(GroupCondition,FlagGroName)
+			}
+
+			// -s & -g
+			services, err := MyConn.GetServices(client.WithServiceIds(FlagServiceIds), client.WithGroupNames(GroupCondition))
 			if err != nil {
-				cmd.PrintErrf("[Deploy]: add service[%s] failed. %v\n", s.Name, err)
-				cmd.Println("[Deploy]: Rollback immediately...")
-				rollBack(cmd, hasAddService, 0, d.TaskName)
+				cmd.PrintErrf("[Deploy]: get services failed. %s", err)
 				return
 			}
-			cmd.Printf("[Deploy] add service[%s]->[%s] successful.\n", s.Name, serviceId)
-			hasAddService = append(hasAddService, serviceId)
-			deployDetails = append(deployDetails, client.DeployServiceDetail{ServiceID: serviceId, ReleaseCodeID: moduleNameIDMap[s.ModuleName]})
+
+			// 校验
+			for _, s := range services {
+				if _, ok := modules[s.ModuleName]; !ok {
+					cmd.PrintErrf("[Deploy]: [%s] not in this release")
+					return
+				}
+			}
+			for _, service := range services {
+				deployInfos = append(deployInfos, client.DeployServiceDetail{ServiceID: service.ID})
+			}
+
+		} else {
+			dLine := DeployLine{DFile: deployFile}
+			d, err := dLine.CheckDeployFileIsLegal(deployFile)
+			if err != nil {
+				cmd.PrintErrf("[Deploy]: check deploy file failed. %v", err)
+				return
+			}
+
+			err = dLine.CheckAgent()
+			if err != nil {
+				cmd.PrintErrf("[Deploy]: check agent failed. %v", err)
+				return
+			}
+
+			gid, err := dLine.CheckGroupName()
+			if err != nil {
+				cmd.PrintErrf("[Deploy]: check group failed. %v\n", err)
+				return
+			}
+
+			if gid == 0 {
+				cmd.PrintErrf("[Deploy]: check group[%s] failed. non-existent.\n", dLine.GroupName)
+				return
+			}
+
+			if err = dLine.CheckModuleName(modules); err != nil {
+				cmd.PrintErrf("[Deploy]: check module failed. %s.\n", err)
+				return
+			}
+
+			for _, s := range d.Services {
+				serviceId, err := MyConn.AddService(s.Name, s.Dir, s.OsUser, s.OsPass, s.AgentID, s.ModuleName, client.WithGroupId(gid))
+				if err != nil {
+					cmd.PrintErrf("[Deploy]: add service[%s] failed. %v\n", s.Name, err)
+					cmd.Println("[Deploy]: Rollback immediately...")
+					rollBack(cmd, hasAddService, 0, d.TaskName)
+					return
+				}
+				cmd.Printf("[Deploy] add service[%s]->[%s] successful.\n", s.Name, serviceId)
+				hasAddService = append(hasAddService, serviceId)
+				deployInfos = append(deployInfos, client.DeployServiceDetail{ServiceID: serviceId})
+			}
 		}
 
-		taskId, err := MyConn.AddTask(d.TaskName, client.WithReleaseId(releaseId), client.WithTaskDeploy(deployDetails),client.WithTaskShow(true))
+		taskName := "deploy_" + GetRandomString()
+		taskId, err := MyConn.AddTask(taskName, client.WithReleaseId(rid), client.WithTaskDeploy(deployInfos), client.WithTaskShow(true))
 		if err != nil {
-			cmd.PrintErrf("[Deploy]: add task[%s] failed. %v\n", d.TaskName, err)
-			rollBack(cmd, hasAddService, int(taskId), d.TaskName)
+			cmd.PrintErrf("[Deploy]: add task[%s] failed. %v\n", taskName, err)
+			rollBack(cmd, hasAddService, int(taskId), taskName)
 			return
 		}
 		cmd.Printf("[Deploy] task is ready, its ID is [%d].\n", taskId)
@@ -115,6 +154,9 @@ var deployCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(deployCmd)
+	deployCmd.Flags().StringVarP(&FlagGroName, "group", "g", "", "deploy all services under given group-name.")
+	deployCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "deploy services under given service ids.")
+	deployCmd.Flags().StringVarP(&deployFile, "file", "f", "", "deploy according to given yaml file.")
 }
 
 // 部署任务回滚

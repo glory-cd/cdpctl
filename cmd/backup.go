@@ -16,10 +16,9 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"github.com/glory-cd/server/client"
-	"os"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // backupCmd represents the backup command
@@ -29,12 +28,6 @@ var backupCmd = &cobra.Command{
 	Long:  `backup service'`,
 	Example:`  backup ServiceID ServiceID
   backup -g GroupName`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 && FlagGroName == ""{
-			return errors.New("backup must specify services or group")
-		}
-		return nil
-	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
@@ -46,22 +39,26 @@ var backupCmd = &cobra.Command{
 
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var backupInfos []client.StaticServiceDetail
-		if len(args) > 0 {
-			for _, sId := range args {
-				backupInfos = append(backupInfos, client.StaticServiceDetail{ServiceID: sId, Op: client.OperateBackUp})
-			}
-		} else {
-			services, err := MyConn.GetServices(client.WithGroupNames([]string{FlagGroName}))
-			if err != nil {
-				cmd.PrintErrf("[Backup] get group's service failed. %v\n", err)
-				return
-			}
-			for _, service := range services {
-				backupInfos = append(backupInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateBackUp})
-			}
-
+		if len(FlagServiceIds) == 0 && FlagGroName == "" {
+			cmd.PrintErrf("[RollBack] backup must specify services or group.\n")
+			return
 		}
+
+		var backupInfos []client.StaticServiceDetail
+		var GroupCondition []string
+		if FlagGroName != ""{
+			GroupCondition = append(GroupCondition,FlagGroName)
+		}
+		// -s &-g
+		services, err := MyConn.GetServices(client.WithGroupNames(GroupCondition),client.WithServiceIds(FlagServiceIds))
+		if err != nil {
+			cmd.PrintErrf("[RollBack] get service failed. %v\n", err)
+			return
+		}
+		for _, service := range services{
+			backupInfos = append(backupInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateBackUp})
+		}
+
 
 		taskName := "backup_" + GetRandomString()
 		taskID, err := MyConn.AddTask(taskName, client.WithTaskStatic(backupInfos),client.WithTaskShow(true))
@@ -83,4 +80,5 @@ var backupCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(backupCmd)
 	backupCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","backup all services under given group-name.")
+	backupCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "backup services under given service ids.")
 }

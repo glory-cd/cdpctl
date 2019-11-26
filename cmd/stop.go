@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"github.com/glory-cd/server/client"
 	"github.com/spf13/cobra"
 	"os"
@@ -27,12 +26,6 @@ var stopCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "stop service",
 	Long:  `stop service`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 && FlagGroName == "" {
-			return errors.New("stop must specify services or group")
-		}
-		return nil
-	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
@@ -44,21 +37,24 @@ var stopCmd = &cobra.Command{
 
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var stopInfos []client.StaticServiceDetail
-		if len(args) > 0 {
-			for _, sId := range args {
-				stopInfos = append(stopInfos, client.StaticServiceDetail{ServiceID: sId, Op: client.OperateStop})
-			}
-		} else {
-			services, err := MyConn.GetServices(client.WithGroupNames([]string{FlagGroName}))
-			if err != nil {
-				cmd.PrintErrf("[StartUp] get group's service failed. %v\n", err)
-				return
-			}
-			for _, service := range services {
-				stopInfos = append(stopInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateStop})
-			}
+		if len(FlagServiceIds) == 0 && FlagGroName == "" {
+			cmd.PrintErrf("[Stop] backup must specify services or group.\n")
+			return
+		}
 
+		var GroupCondition []string
+		if FlagGroName != ""{
+			GroupCondition = append(GroupCondition,FlagGroName)
+		}
+
+		services, err := MyConn.GetServices(client.WithGroupNames(GroupCondition),client.WithServiceIds(FlagServiceIds))
+		if err != nil {
+			cmd.PrintErrf("[Stop] get service failed. %v\n", err)
+			return
+		}
+		var stopInfos []client.StaticServiceDetail
+		for _, service := range services {
+			stopInfos = append(stopInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateStop})
 		}
 
 		taskName := "stop_" + GetRandomString()
@@ -80,4 +76,5 @@ var stopCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(stopCmd)
 	stopCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","stop all services under given group-name.")
+	stopCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "backup services under given service ids.")
 }

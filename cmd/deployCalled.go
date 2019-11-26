@@ -52,17 +52,17 @@ func (dl *DeployLine) CheckDeployFileIsLegal(file string) (*Deploy, error) {
 	if err != nil {
 		return &d, err
 	}
-	if d.TaskName == "" {
+	/*if d.TaskName == "" {
 		return &d, errors.New("[taskname] field cannot not be empty.")
-	}
+	}*/
 
 	if d.GroupName == "" {
 		return &d, errors.New("[groupname] field cannot not be empty.")
 	}
 
-	if d.ReleaseName == "" {
+	/*if d.ReleaseName == "" {
 		return &d, errors.New("[releasename] field cannot not be empty.")
-	}
+	}*/
 
 	if len(d.Services) == 0 {
 		return &d, errors.New("[services] cannot not be empty.")
@@ -94,9 +94,9 @@ func (dl *DeployLine) CheckDeployFileIsLegal(file string) (*Deploy, error) {
 		}
 	}
 
-	dl.TaskName = d.TaskName
+	//dl.TaskName = d.TaskName
 	dl.GroupName = d.GroupName
-	dl.ReleaseName = d.ReleaseName
+	//dl.ReleaseName = d.ReleaseName
 
 	for _, s := range d.Services {
 		dl.ModuleNames = append(dl.ModuleNames, s.ModuleName)
@@ -120,32 +120,14 @@ func (dl *DeployLine) CheckGroupName() (int32, error) {
 /*
 	校验发布名称是否存在，如果存在返回组织ID
 */
-func (dl *DeployLine) CheckReleaseName() (int32, error) {
-	releases, err := MyConn.GetReleases(client.WithNames([]string{dl.ReleaseName}))
-	if err != nil {
-		return 0, err
-	}
-	return releases.GetID(), nil
-}
+//func (dl *DeployLine) CheckReleaseName() (int32, error) {
+//	releases, err := MyConn.GetReleases(client.WithNames([]string{dl.ReleaseName}))
+//	if err != nil {
+//		return 0, err
+//	}
+//	return releases.GetID(), nil
+//}
 
-/*
-	校验服务的模块名是否在本次发布中，如果存在返回name和ID对应的Map.
-*/
-func (dl *DeployLine) CheckModuleName(releaseId int32) (map[string]int32, error) {
-	mapMoudleNameId := map[string]int32{}
-	mapReleaseCode, err := MyConn.GetReleaseCodeMap(releaseId)
-	if err != nil {
-		return mapMoudleNameId, err
-	}
-
-	for _, mn := range dl.ModuleNames {
-		if _, ok := mapReleaseCode[mn]; !ok {
-			return mapReleaseCode, errors.New("[" + mn + "]" + "not-exist.")
-		}
-		mapMoudleNameId[mn] = mapReleaseCode[mn]
-	}
-	return mapMoudleNameId, nil
-}
 
 /*
 	校验服务所在agent是否在线.
@@ -167,3 +149,17 @@ func (dl *DeployLine) CheckAgent() error {
 	}
 	return nil
 }
+
+/*
+	校验服务的模块名是否在本次发布中
+*/
+func (dl *DeployLine) CheckModuleName(releaseCodes map[string]int32) error {
+	for _, mn := range dl.ModuleNames {
+		if _, ok := releaseCodes[mn]; !ok {
+			return errors.New("[" + mn + "]" + "not in this release.")
+		}
+
+	}
+	return nil
+}
+

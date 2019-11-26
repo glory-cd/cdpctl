@@ -28,8 +28,8 @@ var rollbackCmd = &cobra.Command{
 	Short: "rollback service",
 	Long:  `rollback service'`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 && FlagGroName == ""{
-			return errors.New("rollback must specify services or group")
+		if len(FlagServiceIds) == 0 && FlagGroName == "" {
+			return errors.New("upgrade must specify services or group")
 		}
 		return nil
 	},
@@ -45,20 +45,19 @@ var rollbackCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		var rollbackInfos []client.StaticServiceDetail
-		if len(args) > 0 {
-			for _, sId := range args {
-				rollbackInfos = append(rollbackInfos, client.StaticServiceDetail{ServiceID: sId, Op: client.OperateRollBack})
-			}
-		} else {
-			services, err := MyConn.GetServices(client.WithGroupNames([]string{FlagGroName}))
-			if err != nil {
-				cmd.PrintErrf("[RollBack] get group's service failed. %v\n", err)
-				return
-			}
-			for _, service := range services {
-				rollbackInfos = append(rollbackInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateRollBack})
-			}
 
+		var GroupCondition []string
+		if FlagGroName != ""{
+			GroupCondition = append(GroupCondition,FlagGroName)
+		}
+		// -s &-g
+		services, err := MyConn.GetServices(client.WithGroupNames(GroupCondition),client.WithServiceIds(FlagServiceIds))
+		if err != nil {
+			cmd.PrintErrf("[RollBack] get service failed. %v\n", err)
+			return
+		}
+		for _, service := range services {
+			rollbackInfos = append(rollbackInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateRollBack})
 		}
 
 		taskName := "rollback_" + GetRandomString()
@@ -81,4 +80,5 @@ var rollbackCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(rollbackCmd)
 	rollbackCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","rollback all services under given group-name.")
+	rollbackCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "rollback services under given service ids.")
 }

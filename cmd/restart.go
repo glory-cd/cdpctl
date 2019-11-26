@@ -43,28 +43,26 @@ var restartServiceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "restart service",
 	Long:  `restart service'`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 && FlagGroName == ""{
-			return errors.New("restart service must specify services or group")
-		}
-		return nil
-	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var startInfos []client.StaticServiceDetail
-		if len(args) > 0 {
-			for _, sId := range args {
-				startInfos = append(startInfos, client.StaticServiceDetail{ServiceID: sId, Op: client.OperateRestart})
-			}
-		} else {
-			services, err := MyConn.GetServices(client.WithGroupNames([]string{FlagGroName}))
-			if err != nil {
-				cmd.PrintErrf("[Restart] get group's service failed. %v\n", err)
-				return
-			}
-			for _, service := range services {
-				startInfos = append(startInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateRestart})
-			}
+		if len(FlagServiceIds) == 0 && FlagGroName == "" {
+			cmd.PrintErrf("[Stop] backup must specify services or group.\n")
+			return
+		}
 
+		var GroupCondition []string
+		if FlagGroName != ""{
+			GroupCondition = append(GroupCondition,FlagGroName)
+		}
+
+		services, err := MyConn.GetServices(client.WithGroupNames(GroupCondition),client.WithServiceIds(FlagServiceIds))
+		if err != nil {
+			cmd.PrintErrf("[Stop] get service failed. %v\n", err)
+			return
+		}
+
+		var startInfos []client.StaticServiceDetail
+		for _, service := range services {
+			startInfos = append(startInfos, client.StaticServiceDetail{ServiceID: service.ID, Op: client.OperateRestart})
 		}
 
 		taskName := "restart_" + GetRandomString()
@@ -123,5 +121,6 @@ func init() {
 	restartCmd.AddCommand(restartAgentCmd)
 
 	restartServiceCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","restart all services under given group-name.")
+	restartServiceCmd.Flags().StringSliceVarP(&FlagServiceIds, "services", "s", []string{}, "backup services under given service ids.")
 	restartAgentCmd.Flags().StringVarP(&FlagGroName, "group", "g", "","restart all nodes under given group-name.")
 }
