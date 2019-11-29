@@ -30,25 +30,13 @@ var getCmd = &cobra.Command{
 		var err error
 		MyConn, err = ConnServer(certFile, hostUrl)
 
-		if MyConn == nil  || err != nil{
+		if MyConn == nil || err != nil {
 			cmd.PrintErrf("conn server failed. %s\n", err)
 			os.Exit(1)
 		}
 
 	},
 }
-
-var getConfigCmd = &cobra.Command{
-	Use:   "conf",
-	Short: "get config info",
-	Long:  `get config info`,
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Printf("server host: %s\n",hostUrl)
-		cmd.Printf("cert   file: %s\n",certFile)
-	},
-}
-
-
 
 var getOrgCmd = &cobra.Command{
 	Use:   "org",
@@ -138,14 +126,14 @@ var getReleaseCodeCmd = &cobra.Command{
 	Short: "get releasecode",
 	Long:  `query releasecode`,
 	Run: func(cmd *cobra.Command, args []string) {
-		releases,err := MyConn.GetReleases(client.WithNames(QueryFlagRelNames))
-		if err != nil{
+		releases, err := MyConn.GetReleases(client.WithNames(QueryFlagRelNames))
+		if err != nil {
 			cmd.PrintErrf("[Get]: get release code failed. %v", err)
 			return
 		}
 		releaseIDs := []int32{}
-		for _,r := range releases{
-			releaseIDs = append(releaseIDs,r.ID)
+		for _, r := range releases {
+			releaseIDs = append(releaseIDs, r.ID)
 		}
 
 		queryReleaseCode, err := MyConn.GetReleaseCodes(releaseIDs)
@@ -168,11 +156,33 @@ var getServiceCmd = &cobra.Command{
 			cmd.PrintErrf("[Get]: get service failed. %v", err)
 			return
 		}
-		var showServices []showService
-		for _,s := range queryServices{
-			showServices = append(showServices,showService{ID:s.ID,Name:s.Name,Dir:s.Dir,HostIp:s.HostIp})
+		if queryFlagShow {
+			for _, s := range queryServices {
+				cmd.Println("Service:")
+				cmd.Printf("\tID=%s\n", s.ID)
+				cmd.Printf("\tName=%s\n", s.Name)
+				cmd.Printf("\tDir=%s\n", s.Dir)
+				cmd.Printf("\tModule=%s\n", s.ModuleName)
+				cmd.Printf("\tOsUser=%s\n", s.OsUser)
+				cmd.Printf("\tCodes=%s\n", s.CodePattern)
+				cmd.Printf("\tPid=%s\n", s.PidFile)
+				cmd.Printf("\tStart=%s\n", s.StartCmd)
+				cmd.Printf("\tStop=%s\n", s.StopCmd)
+				cmd.Printf("\tHost=%s\n", s.HostIp)
+				cmd.Printf("\tAgentID=%s\n", s.AgentID)
+				cmd.Printf("\tAgentName=%s\n", s.AgentName)
+				cmd.Printf("\tGroup=%s\n", s.GroupName)
+				cmd.Printf("\tCTime=%s\n", s.CreatTime)
+				cmd.Printf("\tUTime=%s\n", s.LatestTime)
+			}
+		} else {
+			var showServices []showService
+			for _, s := range queryServices {
+				showServices = append(showServices, showService{ID: s.ID, Name: s.Name, Dir: s.Dir, HostIp: s.HostIp, Group: s.GroupName, CreateTime: s.CreatTime, LatestTime: s.LatestTime})
+			}
+			PrintGetResult(showServices)
 		}
-		PrintGetResult(showServices)
+
 	},
 }
 
@@ -186,12 +196,21 @@ var getTaskCmd = &cobra.Command{
 			cmd.PrintErrf("[Get]: get task failed. %v", err)
 			return
 		}
+
 		queryTasks, err := MyConn.GetTasks(client.WithInt32Ids(intIDs), client.WithNames(QueryFlagNames), client.WithGroupNames(QueryFlagGroNames), client.WithReleaseNames(QueryFlagRelNames))
 		if err != nil {
 			cmd.PrintErrf("[Get]: get task failed. %v", err)
 			return
 		}
-		PrintGetResult(queryTasks)
+
+		var showTasks client.TaskSlice
+		for _, t := range queryTasks {
+			if t.IsShow {
+				showTasks = append(showTasks, t)
+			}
+		}
+
+		PrintGetResult(showTasks)
 	},
 }
 
@@ -268,7 +287,6 @@ func init() {
 	getCmd.PersistentFlags().StringSliceVarP(&QueryFlagNames, "name", "n", []string{}, "Obtain category records based on gaven names.")
 	getCmd.PersistentFlags().StringSliceVarP(&QueryFlagIDs, "id", "i", []string{}, "Obtain category records based on gaven ids.")
 
-	getCmd.AddCommand(getConfigCmd)
 	getCmd.AddCommand(getOrgCmd)
 	getCmd.AddCommand(getEnvCmd)
 	getCmd.AddCommand(getProjectCmd)
@@ -294,6 +312,7 @@ func init() {
 	getServiceCmd.Flags().StringSliceVarP(&QueryFlagGroNames, "groups", "g", []string{}, "group names")
 	getServiceCmd.Flags().StringSliceVarP(&queryAgentIds, "agents", "a", []string{}, "agent ids")
 	getServiceCmd.Flags().StringSliceVarP(&queryModuleNames, "modules", "m", []string{}, "module names")
+	getServiceCmd.Flags().BoolVarP(&queryFlagShow, "describe", "d", false, "show service details or not")
 
 	getTaskCmd.Flags().StringSliceVarP(&QueryFlagGroNames, "groups", "g", []string{}, "group name")
 	getTaskCmd.Flags().StringSliceVarP(&QueryFlagRelNames, "releases", "r", []string{}, "release name")

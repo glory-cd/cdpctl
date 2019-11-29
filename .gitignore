@@ -4,3 +4,4 @@ cert/*
 cert_*/*
 example/*
 *.exe
+Dockerfile

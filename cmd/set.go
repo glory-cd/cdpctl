@@ -150,11 +150,7 @@ For example:
 
 func init() {
 	RootCmd.AddCommand(setCmd)
-	setCmd.AddCommand(setConfigCmd)
 	setCmd.AddCommand(setAgentCmd)
 	setCmd.AddCommand(setReleaseCodeCmd)
 	setCmd.AddCommand(setTimedTaskCmd)
-
-	setConfigCmd.Flags().StringVarP(&serverHost,"server","","","")
-	setConfigCmd.Flags().StringVarP(&serverCert,"cert","","","")
 }

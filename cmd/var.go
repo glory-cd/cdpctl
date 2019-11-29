@@ -7,7 +7,7 @@ package cmd
 import "github.com/glory-cd/server/client"
 
 //version
-var versionString = "0.0.13"
+var versionString = "0.1"
 
 const (
 	ServerCertFileKey string = "server.certFile"
@@ -57,6 +57,7 @@ var (
 	queryFlagCronIDs  []int
 	queryTaskName     string
 	queryExecutionId  int
+	queryFlagShow     bool
 
 	//set config
 	serverHost string
@@ -79,9 +80,12 @@ var OpMap = map[string]client.OpMode{"": client.OperateDefault,
 	"rollback": client.OperateRollBack}
 
 type showService struct {
-	ID     string
-	Name   string
-	Dir    string
-	HostIp string
+	ID         string
+	Name       string
+	Dir        string
+	HostIp     string
+	Group      string
+	CreateTime string
+	LatestTime string
 }
 
